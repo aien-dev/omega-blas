@@ -1,0 +1,15 @@
+widen f16 (all patterns): 65536 values, 0 mismatches
+widen bf16 (all patterns): 65536 values, 0 mismatches
+widen e4m3fn (all patterns): 256 values, 0 mismatches
+widen e5m2 (all patterns): 256 values, 0 mismatches
+narrow float16 all patterns: 65536 values, 0 mismatches
+narrow float16 ties: 63486 values, 0 mismatches
+narrow float16 tie +-1ulp: 126972 values, 0 mismatches
+narrow float16 edges: 15 values, 0 mismatches
+narrow float16 random f32: 1048576 values, 0 mismatches
+narrow bfloat16 all patterns: 65536 values, 0 mismatches
+narrow bfloat16 ties: 65278 values, 0 mismatches
+narrow bfloat16 tie +-1ulp: 130556 values, 0 mismatches
+narrow bfloat16 edges: 15 values, 0 mismatches
+narrow bfloat16 random f32: 1048576 values, 0 mismatches
+FAILURES 0

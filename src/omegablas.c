@@ -373,12 +373,19 @@ int omb_gemm_strided_batched(CBLAS_LAYOUT layout, enum CBLAS_TRANSPOSE TransA,
     return 0;
 }
 
+/* The seeded Omega loop bound is 1,000,000 iterations; convert in chunks below it. */
+#define OMB_CHUNK ((size_t)1 << 19)
+
 void omb_widen(omb_type src, const void *s, float *d, size_t n)
 {
     pthread_mutex_lock(&omb_lock);
     if (src == OMB_F32) memmove(d, s, n * 4);
-    else if (is16(src)) widen16(src == OMB_BF16, s, n, (uint32_t *)d, n);
-    else if (is8(src)) widen8(src == OMB_E5M2, s, n, (uint32_t *)d, n);
+    else
+        for (size_t o = 0; o < n; o += OMB_CHUNK) {
+            size_t c = n - o < OMB_CHUNK ? n - o : OMB_CHUNK;
+            if (is16(src)) widen16(src == OMB_BF16, (const uint16_t *)s + o, c, (uint32_t *)d + o, c);
+            else if (is8(src)) widen8(src == OMB_E5M2, (const uint8_t *)s + o, c, (uint32_t *)d + o, c);
+        }
     pthread_mutex_unlock(&omb_lock);
 }
 
@@ -386,7 +393,11 @@ void omb_narrow(omb_type dst, const float *s, void *d, size_t n)
 {
     pthread_mutex_lock(&omb_lock);
     if (dst == OMB_F32) memmove(d, s, n * 4);
-    else if (is16(dst)) narrow16(dst == OMB_BF16, (const uint32_t *)s, n, d, n);
+    else if (is16(dst))
+        for (size_t o = 0; o < n; o += OMB_CHUNK) {
+            size_t c = n - o < OMB_CHUNK ? n - o : OMB_CHUNK;
+            narrow16(dst == OMB_BF16, (const uint32_t *)s + o, c, (uint16_t *)d + o, c);
+        }
     pthread_mutex_unlock(&omb_lock);
 }
 
