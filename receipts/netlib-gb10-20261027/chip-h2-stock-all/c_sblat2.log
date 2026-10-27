@@ -1,0 +1,52 @@
+ cblas_sgemv  PASSED THE TESTS OF ERROR-EXITS
+ TESTS OF THE REAL             LEVEL 2 BLAS
+
+ THE FOLLOWING PARAMETER VALUES WILL BE USED:
+   FOR N                   0     1     2     3     5     9
+   FOR K                   0     1     2     4
+   FOR INCX AND INCY       1     2    -1    -2
+   FOR ALPHA             0.0   1.0   0.7
+   FOR BETA              0.0   1.0   0.9
+
+ ROUTINES PASS COMPUTATIONAL TESTS IF TEST RATIO IS LESS THAN   16.00
+
+ COLUMN-MAJOR AND ROW-MAJOR DATA LAYOUTS ARE TESTED
+
+ RELATIVE MACHINE PRECISION IS TAKEN TO BE  1.2E-07
+
+
+ cblas_sgemv  PASSED THE COLUMN-MAJOR COMPUTATIONAL TESTS (  3460 CALLS)
+ cblas_sgemv  PASSED THE ROW-MAJOR    COMPUTATIONAL TESTS (  3460 CALLS)
+
+ cblas_sgbmv  WAS NOT TESTED
+
+ cblas_ssymv  WAS NOT TESTED
+
+ cblas_ssbmv  WAS NOT TESTED
+
+ cblas_sspmv  WAS NOT TESTED
+
+ cblas_strmv  WAS NOT TESTED
+
+ cblas_stbmv  WAS NOT TESTED
+
+ cblas_stpmv  WAS NOT TESTED
+
+ cblas_strsv  WAS NOT TESTED
+
+ cblas_stbsv  WAS NOT TESTED
+
+ cblas_stpsv  WAS NOT TESTED
+
+ cblas_sger   WAS NOT TESTED
+
+ cblas_ssyr   WAS NOT TESTED
+
+ cblas_sspr   WAS NOT TESTED
+
+ cblas_ssyr2  WAS NOT TESTED
+
+ cblas_sspr2  WAS NOT TESTED
+
+ END OF TESTS
+omega-blas routes: device gb10 host 0 gb10 6144 gb10_core_calls 4608 gb10_host_fixed 0 cudapp b28372d1f9ebb4edf5f347eb6ce2e8d7ca21e2c5

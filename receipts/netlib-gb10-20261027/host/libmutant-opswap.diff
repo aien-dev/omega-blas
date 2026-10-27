@@ -1,0 +1,2 @@
+212a213
+>     { int t = x.op_a; x.op_a = x.op_b; x.op_b = t; } /* MUTANT: op(A) and op(B) swapped */

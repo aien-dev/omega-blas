@@ -3,3 +3,5 @@ omc (OM-1)   sha256 734f0a39319fbfa930bcc62cb30dbf06d47d78e126372b74f5baf478e612
 omc2 (OM-2)  sha256 2c82480596bbdc50cda9626866209ef662d5834f278f839ff4ce0250c495029f  (omega-mv e5b32567:seed/out/omc)
 omega-bridge aien-dev/omega-bridge 2b59387101db52b7f859b6a3f6593fdd6b4e4a7e (feat/slice-abi, PR #15, native ABI v2 slices)
 lapack       netlib LAPACK v3.12.1 (BLAS/CBLAS test drivers only), tarball sha256 2ca6407a...2422 (see tests/netlib/fetch.sh)
+cudapp       aien-dev/CUDApp b28372d1f9ebb4edf5f347eb6ce2e8d7ca21e2c5 (gemm-general/gemm-ex, PR #139, draft: omega_gpu_gemm_ex, GB10=1 builds only)
+toolchain    cc and GNU Fortran 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1) for the netlib drivers and the GB10 receipt

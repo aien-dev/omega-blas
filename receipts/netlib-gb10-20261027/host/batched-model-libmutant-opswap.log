@@ -1,0 +1,6 @@
+gb10 batched: library $WORK/blas-mut/build-gb10/libomegablas.so, device gb10
+omega-blas test hooks: backend model (bw_hmma_model {16,2,RZ,nominal 2})
+FAIL strided col ta=0 tb=1 M=3 N=5 K=2 count=3: C(0,0) batch 0 = 0.466666609, ref 0.95288438762680272, ratio 2.89e+06
+FAIL strided col ta=0 tb=1 M=9 N=7 K=9 count=3: C(0,0) batch 0 = 1.78736436, ref 0.80767754579911255, ratio 3.46e+06
+omega-blas: omega_gpu_gemm_ex BAD_ARGS (-1) on m 16 n 13 k 16 batch 3: -
+Aborted (core dumped)

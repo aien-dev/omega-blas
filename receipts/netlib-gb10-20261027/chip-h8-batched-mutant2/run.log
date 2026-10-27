@@ -1,0 +1,19 @@
+gb10 batched: library $WORK/blas/build-gb10/libomegablas.so, device gb10
+omega-blas test hooks: gemm_ex mutant 2 planted
+FAIL strided col ta=1 tb=0 M=3 N=5 K=2 count=3: C(0,0) batch 0 = 0.127613798, ref 0.99799613141939147, ratio 7.32e+06
+FAIL strided col ta=1 tb=0 M=9 N=7 K=9 count=3: C(0,0) batch 0 = -2.26968288, ref -0.024241301775365542, ratio 5.55e+06
+FAIL strided col ta=1 tb=0 M=16 N=13 K=16 count=3: C(0,0) batch 0 = 1.85903668, ref -3.2289237830138511, ratio 9.91e+06
+FAIL strided col ta=1 tb=1 M=3 N=5 K=2 count=3: C(0,0) batch 0 = -0.194457501, ref -0.32390684457364216, ratio 7.36e+05
+FAIL strided col ta=1 tb=1 M=9 N=7 K=9 count=3: C(0,0) batch 0 = -0.716331065, ref -1.6529967732551256, ratio 2.67e+06
+FAIL strided col ta=1 tb=1 M=16 N=13 K=16 count=3: C(0,0) batch 0 = -0.501149952, ref 0.24578868715249413, ratio 1.09e+06
+FAIL strided row ta=0 tb=1 M=3 N=5 K=2 count=3: C(0,0) batch 0 = -0.335494429, ref -0.25203054228320809, ratio 7.83e+05
+FAIL strided row ta=0 tb=1 M=9 N=7 K=9 count=3: C(0,0) batch 0 = 1.41413677, ref 0.15735118677389082, ratio 4.7e+06
+FAIL strided row ta=0 tb=1 M=16 N=13 K=16 count=3: C(0,0) batch 0 = 0.35623771, ref -2.9365764295781354, ratio 4.61e+06
+FAIL strided row ta=1 tb=1 M=3 N=5 K=2 count=3: C(0,0) batch 0 = 0.365013719, ref -0.33887325885280006, ratio 4.87e+06
+FAIL strided row ta=1 tb=1 M=9 N=7 K=9 count=3: C(0,0) batch 0 = 0.441637158, ref 0.30450710904147371, ratio 4.9e+05
+FAIL strided row ta=1 tb=1 M=16 N=13 K=16 count=3: C(0,0) batch 0 = -0.888617635, ref -0.7993367998746308, ratio 1.91e+05
+FAIL overlap col ta=1 tb=0 M=9 N=7 K=9 count=3: C(0,0) batch 2 = -1.09324443, ref 0.74981507274012316, ratio 5.09e+06
+FAIL overlap row ta=0 tb=1 M=5 N=3 K=16 count=3: C(0,0) batch 2 = 1.21167076, ref 0.31649105528808619, ratio 1.76e+06
+FAIL pointer col ta=1 tb=0 M=9 N=7 K=9 count=3: C(0,0) batch 0 = -2.4028554, ref -0.5793094512101149, ratio 5.68e+06
+FAIL pointer row ta=0 tb=1 M=5 N=3 K=16 count=3: C(0,0) batch 0 = 1.58548951, ref 1.7685756615550901, ratio 3.04e+05
+batched: device gb10, 46 cases, 16 failed, largest ratio device route 606990237483905822965208874292871168.000 (limit 5.70) host route 0.832 (limit 9.51), routes host 2 gb10 52 gb10_core_calls 108

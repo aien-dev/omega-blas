@@ -92,6 +92,22 @@ void omb_narrow(omb_type dst, const float *s, void *d, size_t n);
 /* The identity string of the bound Omega unit (source and compiler sha256). */
 const char *omb_ident(void);
 
+/* Device selection (README.md, "GB10 device path"). OMB_DEVICE_HOST runs every call in the Omega unit on the CPU.
+ * OMB_DEVICE_GB10 sends the f32 products without an epilogue (sgemm_, cblas_sgemm, sgemv_,
+ * cblas_sgemv, omb_gemm_ex / batched / strided with A, B and C f32, no bias, act none) to
+ * CUDApp omega_gpu_gemm_ex (bf16x3 on the GB10 tensor cores, not bit-exact fp32: docs/TOLERANCE.md);
+ * every other call stays on the host and is counted as such. A device error aborts the process
+ * (no silent host fallback). The initial device comes from the environment variable
+ * OMEGABLAS_DEVICE=host|gb10 (unset: host), read once at the first call. */
+typedef enum { OMB_DEVICE_HOST = 0, OMB_DEVICE_GB10 = 1 } omb_device;
+/* Returns 0, or -1 (device unchanged) when the library was built without the GB10 path. */
+int omb_set_device(omb_device d);
+omb_device omb_get_device(void);
+/* Route counters since load: products computed on the host, omega_gpu_gemm_ex calls, the C3
+ * kernel calls they made, and outputs gemm_ex recomputed on the host for non-finite inputs. */
+typedef struct { uint64_t host, gb10, gb10_core_calls, gb10_host_fixed; } omb_route_counts;
+void omb_get_route_counts(omb_route_counts *out);
+
 #ifdef __cplusplus
 }
 #endif

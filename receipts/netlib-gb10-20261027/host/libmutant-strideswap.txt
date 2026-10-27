@@ -1,0 +1,1 @@
+stride-swap mutant: lines 202/205 x.stride_a = sa; x.stride_b = sb (swapped); built and run before the op-swap mutant replaced it
