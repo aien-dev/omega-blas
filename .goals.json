@@ -1,0 +1,25 @@
+{
+  "project_name": "omega-blas",
+  "parent": "aien-dev/omega-mv@e5b32567a7aff3ce594e3254a622a846a6cd190b",
+  "goals": [
+    {
+      "id": "goal-cpu",
+      "title": "CPU BLAS in Omega with CBLAS ABI",
+      "status": "Active",
+      "milestones": [
+        {"id": 1, "description": "om/blas.om compiles with the pinned OM-2 omc and binds through omega-bridge ABI v2", "completed": true},
+        {"id": 2, "description": "netlib sblat2/sblat3 and c_sblat2/c_sblat3 pass for SGEMV/SGEMM", "completed": false},
+        {"id": 3, "description": "randomized fuzz vs numpy with a Wolfram-derived bound, and a wrong-kernel mutant caught", "completed": false},
+        {"id": 4, "description": "interleaved A/B perf vs OpenBLAS (Spark) and Accelerate (Mac)", "completed": false}
+      ]
+    },
+    {
+      "id": "goal-gpu",
+      "title": "GB10 sm_121 gemm through CUDApp vs cuBLAS",
+      "status": "Active",
+      "milestones": [
+        {"id": 1, "description": "GPU gemm run under the GB10 lock with cuBLAS baseline", "completed": false}
+      ]
+    }
+  ]
+}

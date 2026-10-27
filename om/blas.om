@@ -1,0 +1,596 @@
+note blas.om: the omega-blas compute unit. OM-2, bound through omega-bridge native ABI v2 (tools/native).
+note Matrices are column-major (Fortran BLAS); the C layer maps CBLAS row-major onto it by swapping
+note A and B. ABI v2 views are integer-only, so f32 data crosses as uint bits and is bitcast here;
+note f16 and bf16 cross as ushort, fp8 (OCP e4m3 / e5m2) as uchar. Every product is f32 x f32 with an
+note f32 accumulator: the low-precision formats are widened exactly to f32 while packing (BLIS-style
+note panels), so one kernel serves sgemm, hgemm, bf16 gemm and fp8 gemm. No FMA: one rounding per
+note operator (OMEGESE 9.9), which the tolerance contract in docs/TOLERANCE.md accounts for.
+note A loop runs at most 1000000 passes (trap 4), so each dimension is below 1000000.
+om2
+layout gp 128
+field m ulong at 0 little
+field n ulong at 8 little
+field k ulong at 16 little
+field ldc ulong at 24 little
+field offc ulong at 32 little
+field alpha uint at 40 little
+field beta uint at 44 little
+field act ulong at 48 little
+field wsa ulong at 56 little
+field wsb ulong at 64 little
+field wsbias ulong at 72 little
+field mp ulong at 80 little
+field np ulong at 88 little
+field pad ulong 4 at 96 little
+end
+layout pk 64
+field rows ulong at 0 little
+field cols ulong at 8 little
+field si ulong at 16 little
+field off ulong at 24 little
+field sq ulong at 32 little
+field w ulong at 40 little
+field dst ulong at 48 little
+field dt ulong at 56 little
+end
+layout gv 80
+field m ulong at 0 little
+field n ulong at 8 little
+field lda ulong at 16 little
+field offa ulong at 24 little
+field ta ulong at 32 little
+field alpha uint at 40 little
+field beta uint at 44 little
+field wx ulong at 48 little
+field wy ulong at 56 little
+field pad ulong 2 at 64 little
+end
+layout cp 48
+field n ulong at 0 little
+field os ulong at 8 little
+field is long at 16 little
+field od ulong at 24 little
+field id long at 32 little
+field pad ulong at 40 little
+end
+layout ck 80
+field ta long at 0 little
+field tb long at 8 little
+field m long at 16 little
+field n long at 24 little
+field k long at 32 little
+field lda long at 40 little
+field ldb long at 48 little
+field ldc long at 56 little
+field incx long at 64 little
+field incy long at 72 little
+end
+note ---- format conversions (exact widening; round-to-nearest-even narrowing) ----
+fn h2f h ushort to uint
+x = uint h
+s = shl and x 32768 16
+e = and shr x 10 31
+f = and x 1023
+if eq e 31
+ret or s or 2139095040 shl f 13
+end
+if eq e 0
+v = mul f32 f bitcast f32 uint 864026624
+ret or s bitcast uint v
+end
+ret or s or shl add e 112 23 shl f 13
+end
+fn b2f h ushort to uint
+ret shl uint h 16
+end
+fn e4f b uchar to uint
+x = uint b
+s = shl and x 128 24
+e = and shr x 3 15
+f = and x 7
+if and eq e 15 eq f 7
+ret or s 2143289344
+end
+if eq e 0
+v = mul f32 f bitcast f32 uint 989855744
+ret or s bitcast uint v
+end
+ret or s or shl add e 120 23 shl f 20
+end
+fn e5f b uchar to uint
+x = uint b
+s = shl and x 128 24
+e = and shr x 2 31
+f = and x 3
+if eq e 31
+ret or s or 2139095040 shl f 21
+end
+if eq e 0
+v = mul f32 f bitcast f32 uint 931135488
+ret or s bitcast uint v
+end
+ret or s or shl add e 112 23 shl f 21
+end
+fn f2b u uint to ushort
+if gt and u 2147483647 2139095040
+ret ushort or shr u 16 64
+end
+r = add u add 32767 and shr u 16 1
+ret ushort shr r 16
+end
+fn f2h u uint to ushort
+s = and shr u 16 32768
+a = and u 2147483647
+if gt a 2139095040
+ret ushort or s or 32256 and shr a 13 1023
+end
+if ge a 1199570944
+ret ushort or s 31744
+end
+if ge a 947912704
+r = add a add 4095 and shr a 13 1
+r = sub r 939524096
+ret ushort or s shr r 13
+end
+t = mul bitcast f32 a 16777216.0f32
+q = uint t
+fr = sub t f32 q
+if gt fr 0.5f32
+q = add q 1
+end
+if eq fr 0.5f32
+q = add q and q 1
+end
+ret ushort or s q
+end
+note Array converters (the bridge binds only ulong / long scalars, so the formats travel as views).
+note widen16: d[i] = f32 bits of s[i] as f16 (dt 0) or bf16 (dt 1); narrow16: the reverse, RNE.
+export fn widen16 dt ulong s view ushort * d edit uint * to void
+for i ulong len s
+if eq dt 1
+put d i b2f get s i
+else
+put d i h2f get s i
+end
+end
+end
+note widen8: d[i] = f32 bits of s[i] as OCP e4m3 (dt 0) or e5m2 (dt 1).
+export fn widen8 dt ulong s view uchar * d edit uint * to void
+for i ulong len s
+if eq dt 1
+put d i e5f get s i
+else
+put d i e4f get s i
+end
+end
+end
+export fn narrow16 dt ulong s view uint * d edit ushort * to void
+for i ulong len s
+if eq dt 1
+put d i f2b get s i
+else
+put d i f2h get s i
+end
+end
+end
+note ---- epilogue: alpha, beta, bias, activation (act: 0 none, 1 relu, 2 gelu-tanh; +16 bias) ----
+fn expd x f64 to f64
+h = 0.5f64
+if lt x 0.0f64
+h = -0.5f64
+end
+n = long add mul x 1.4426950408889634f64 h
+g = f64 n
+r = sub sub x mul g 0.6931471803691238f64 mul g 1.9082149292705877e-10f64
+s = 1.0f64
+t = 1.0f64
+for i ulong 13
+t = div mul t r f64 add i 1
+s = add s t
+end
+pw = bitcast f64 shl ulong add n 1023 52
+ret mul s pw
+end
+fn tanhd y f64 to f64
+if ne y y
+ret y
+end
+if gt y 20.0f64
+ret 1.0f64
+end
+if lt y -20.0f64
+ret -1.0f64
+end
+e = expd mul 2.0f64 y
+ret div sub e 1.0f64 add e 1.0f64
+end
+fn gelu x f32 to f32
+if lt x -3.0e38f32
+ret -0.0f32
+end
+d = f64 x
+y = mul 0.7978845608028654f64 add d mul 0.044715f64 mul d mul d d
+t = tanhd y
+ret f32 mul mul 0.5f64 d add 1.0f64 t
+end
+export fn gelu32 s view uint * d edit uint * to void
+for i ulong len s
+put d i bitcast uint gelu bitcast f32 get s i
+end
+end
+fn ep p view gp v f32 cv f32 bv f32 to f32
+r = mul bitcast f32 get p alpha v
+be = bitcast f32 get p beta
+if ne be 0.0f32
+r = add r mul be cv
+end
+if ne and get p act 16 0
+r = add r bv
+end
+a = and get p act 15
+if eq a 1
+if lt r 0.0f32
+r = 0.0f32
+end
+end
+if eq a 2
+r = gelu r
+end
+ret r
+end
+note ---- packing: op(X) rows into 2-wide panels, d[dst + ip*2*cols + q*2 + t] = op(X)[2*ip + t, q];
+note element (i, q) of op(X) is s[off + i*si + q*sq]; a row past the end is zero. The C layer sets
+note (si, sq) = (1, ld) for an untransposed operand and (ld, 1) for a transposed one, and w = 2 cols - 2
+note (the step from the odd row of one panel to the even row of the next). One column per helper call:
+note a function has 16 registers, and two views plus two runtime loops leave too few for the body.
+fn pc32 p view pk s view uint * d edit uint * q ulong to void
+y = add get p off mul q get p sq
+x = add get p dst add q q
+for i ulong get p rows
+put d x get s y
+y = add y get p si
+x = add x 1
+if eq and i 1 1
+x = add x get p w
+end
+end
+if eq and get p rows 1 1
+put d x uint 0
+end
+end
+export fn pack32 p view pk s view uint * d edit uint * to void
+for q ulong get p cols
+pc32 p s d q
+end
+end
+fn pc16 p view pk s view ushort * d edit uint * q ulong to void
+y = add get p off mul q get p sq
+x = add get p dst add q q
+for i ulong get p rows
+if eq get p dt 1
+put d x b2f get s y
+else
+put d x h2f get s y
+end
+y = add y get p si
+x = add x 1
+if eq and i 1 1
+x = add x get p w
+end
+end
+if eq and get p rows 1 1
+put d x uint 0
+end
+end
+export fn pack16 p view pk s view ushort * d edit uint * to void
+for q ulong get p cols
+pc16 p s d q
+end
+end
+fn pc8 p view pk s view uchar * d edit uint * q ulong to void
+y = add get p off mul q get p sq
+x = add get p dst add q q
+for i ulong get p rows
+if eq get p dt 1
+put d x e5f get s y
+else
+put d x e4f get s y
+end
+y = add y get p si
+x = add x 1
+if eq and i 1 1
+x = add x get p w
+end
+end
+if eq and get p rows 1 1
+put d x uint 0
+end
+end
+export fn pack8 p view pk s view uchar * d edit uint * to void
+for q ulong get p cols
+pc8 p s d q
+end
+end
+note stage16: widen an f16 (dt 0) or bf16 (dt 1) rows x cols block s[off + i*si + j*sq] into
+note d[dst ..] column-major with ld = rows (the C operand of a half-output gemm, before beta).
+fn sc16 p view pk s view ushort * d edit uint * j ulong to void
+y = add get p off mul j get p sq
+x = add get p dst mul j get p rows
+for i ulong get p rows
+if eq get p dt 1
+put d x b2f get s y
+else
+put d x h2f get s y
+end
+y = add y get p si
+x = add x 1
+end
+end
+export fn stage16 p view pk s view ushort * d edit uint * to void
+for j ulong get p cols
+sc16 p s d j
+end
+end
+note unpack16: s[dst ..] holds a rows x cols column-major f32 block (ld = rows); write it to
+note d[off + i*si + j*sq] as f16 (dt 0) or bf16 (dt 1), round to nearest even.
+fn uc16 p view pk s view uint * d edit ushort * j ulong to void
+x = add get p dst mul j get p rows
+y = add get p off mul j get p sq
+for i ulong get p rows
+if eq get p dt 1
+put d y f2b get s x
+else
+put d y f2h get s x
+end
+y = add y get p si
+x = add x 1
+end
+end
+export fn unpack16 p view pk s view uint * d edit ushort * to void
+for j ulong get p cols
+uc16 p s d j
+end
+end
+note ---- the gemm macro-kernel over packed panels: 2 x 2 register tile (16 registers per function) ----
+note mk: t[8] = ia, t[9] = ib, t[10] = kl in; t[0..3] = the f32 bits of
+note sum_q Ap[ia + 2q + r] * Bp[ib + 2q + s] at t[2s + r] out.
+fn mk w view uint * t edit uint 16 to void
+ia = ulong get t 8
+ib = ulong get t 9
+kl = ulong get t 10
+c0 = 0.0f32
+c1 = 0.0f32
+c2 = 0.0f32
+c3 = 0.0f32
+while ne kl 0
+b0 = bitcast f32 get w ib
+b1 = bitcast f32 get w add ib 1
+a = bitcast f32 get w ia
+c0 = add c0 mul a b0
+c2 = add c2 mul a b1
+a = bitcast f32 get w add ia 1
+c1 = add c1 mul a b0
+c3 = add c3 mul a b1
+ia = add ia 2
+ib = add ib 2
+kl = sub kl 1
+end
+put t 0 bitcast uint c0
+put t 1 bitcast uint c1
+put t 2 bitcast uint c2
+put t 3 bitcast uint c3
+end
+note te1: the epilogue of one element: tile slot e = t[6] holds the sum of row t[12] + (e and 1),
+note column t[13] + (e shr 1).
+fn te1 p view gp w view uint * c edit uint * t view uint 16 to void
+i = ulong add get t 12 and get t 6 1
+j = ulong add get t 13 shr get t 6 1
+if lt i get p m
+if lt j get p n
+x = add get p offc add i mul j get p ldc
+cv = 0.0f32
+if ne bitcast f32 get p beta 0.0f32
+cv = bitcast f32 get c x
+end
+bv = 0.0f32
+if ne and get p act 16 0
+if ne and get p act 32 0
+i = j
+end
+bv = bitcast f32 get w add get p wsbias i
+end
+put c x bitcast uint ep p bitcast f32 get t ulong get t 6 cv bv
+end
+end
+end
+note gcol: one column panel jp of C, every row panel against it.
+fn gcol p view gp w view uint * c edit uint * jp ulong to void
+t = new uint 16 0
+put t 8 uint get p wsa
+put t 9 uint add get p wsb mul mul jp get p k 2
+if ne bitcast f32 get p alpha 0.0f32
+put t 10 uint get p k
+end
+put t 11 uint mul get p k 2
+put t 13 uint add jp jp
+for ip ulong get p mp
+mk w edit t
+put t 8 add get t 8 get t 11
+put t 12 uint add ip ip
+for e ulong 4
+put t 6 uint e
+te1 p w c view t
+end
+end
+end
+note C[i, j] = ep(sum_q Ap[i, q] * Bp[j, q]); Ap at wsa in 2-row panels, Bp at wsb in 2-column panels,
+note the bias vector at wsbias (act +16: by row i; +48: by column j). Reference SGEMM semantics:
+note alpha 0 reads no A or B, beta 0 reads no C, and (alpha 0 or k 0) with beta 1 changes nothing.
+export fn gemm_k p view gp w view uint * c edit uint * to void
+if or eq get p m 0 eq get p n 0
+ret
+end
+if or eq get p k 0 eq bitcast f32 get p alpha 0.0f32
+if eq bitcast f32 get p beta 1.0f32
+if eq and get p act 31 0
+ret
+end
+end
+end
+for jp ulong get p np
+gcol p w c jp
+end
+end
+note ---- gemv: y = alpha op(A) x + beta y, with x and y gathered contiguous into w (wx, wy) ----
+note Reference SGEMV order: y = beta y first, then the axpy form (ta 0) or the dot form (ta 1).
+fn gvy p view gv w edit uint * to void
+be = bitcast f32 get p beta
+ly = get p m
+if ne get p ta 0
+ly = get p n
+end
+for i ulong ly
+y = add get p wy i
+if eq be 0.0f32
+put w y uint 0
+else
+put w y bitcast uint mul be bitcast f32 get w y
+end
+end
+end
+note gn1: y += (alpha x[j]) A[:, j] (one column of the axpy form)
+fn gn1 p view gv a view uint * w edit uint * j ulong to void
+tp = mul bitcast f32 get p alpha bitcast f32 get w add get p wx j
+ja = add get p offa mul j get p lda
+y = get p wy
+for i ulong get p m
+u = mul tp bitcast f32 get a ja
+u = add bitcast f32 get w y u
+put w y bitcast uint u
+y = add y 1
+ja = add ja 1
+end
+end
+fn gvn p view gv a view uint * w edit uint * to void
+for j ulong get p n
+gn1 p a w j
+end
+end
+note gt1: y[j] += alpha (A[:, j] . x) (one column of the dot form)
+fn gt1 p view gv a view uint * w edit uint * j ulong to void
+tp = 0.0f32
+ja = add get p offa mul j get p lda
+x = get p wx
+for i ulong get p m
+tp = add tp mul bitcast f32 get a ja bitcast f32 get w x
+x = add x 1
+ja = add ja 1
+end
+x = add get p wy j
+put w x bitcast uint add bitcast f32 get w x mul bitcast f32 get p alpha tp
+end
+fn gvt p view gv a view uint * w edit uint * to void
+for j ulong get p n
+gt1 p a w j
+end
+end
+export fn gemv_k p view gv a view uint * w edit uint * to void
+if or eq get p m 0 eq get p n 0
+ret
+end
+al = bitcast f32 get p alpha
+be = bitcast f32 get p beta
+if and eq al 0.0f32 eq be 1.0f32
+ret
+end
+if ne be 1.0f32
+gvy p w
+end
+if eq al 0.0f32
+ret
+end
+if eq get p ta 0
+gvn p a w
+else
+gvt p a w
+end
+end
+note ---- strided copy (BLAS inc, negative allowed): d[od + i*id] = s[os + i*is] ----
+export fn copy32 p view cp s view uint * d edit uint * to void
+x = long get p os
+y = long get p od
+for i ulong get p n
+put d ulong y get s ulong x
+x = add x get p is
+y = add y get p id
+end
+end
+note ---- argument checks: the reference BLAS info numbers (0 = valid) ----
+fn tok c long to bool
+ret or or eq c 78 eq c 110 or or eq c 84 eq c 116 or eq c 67 eq c 99
+end
+fn notr c long to bool
+ret or eq c 78 eq c 110
+end
+fn mx1 a long to long
+if lt a 1
+ret 1
+end
+ret a
+end
+export fn gemm_info p view ck to ulong
+ra = get p k
+if notr get p ta
+ra = get p m
+end
+rb = get p n
+if notr get p tb
+rb = get p k
+end
+if not tok get p ta
+ret 1
+end
+if not tok get p tb
+ret 2
+end
+if lt get p m 0
+ret 3
+end
+if lt get p n 0
+ret 4
+end
+if lt get p k 0
+ret 5
+end
+if lt get p lda mx1 ra
+ret 8
+end
+if lt get p ldb mx1 rb
+ret 10
+end
+if lt get p ldc mx1 get p m
+ret 13
+end
+ret 0
+end
+export fn gemv_info p view ck to ulong
+if not tok get p ta
+ret 1
+end
+if lt get p m 0
+ret 2
+end
+if lt get p n 0
+ret 3
+end
+if lt get p lda mx1 get p m
+ret 6
+end
+if eq get p incx 0
+ret 8
+end
+if eq get p incy 0
+ret 11
+end
+ret 0
+end
