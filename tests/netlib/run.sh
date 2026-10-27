@@ -7,7 +7,7 @@
 # Exit 0 only if all four drivers report every enabled routine PASSED and none FAILED.
 set -eu
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
-LAPACK=${LAPACK:?set LAPACK to an unpacked lapack-3.12.1 tree (tests/netlib/fetch.sh)}
+LAPACK=${LAPACK:?set LAPACK to an unpacked lapack-3.12.1 tree (https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.12.1.tar.gz)}
 FC=${FC:-gfortran}
 CC=${CC:-cc}
 W=$ROOT/build/netlib
