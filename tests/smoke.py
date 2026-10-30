@@ -1,4 +1,4 @@
-"""Smoke check: cblas_sgemm / cblas_sgemv / omb_gemm_ex against a float64 numpy reference."""
+"""Smoke check: cblas_sgemm / cblas_sgemv against a float64 numpy reference (omb_gemm_ex is not exercised here)."""
 import ctypes as C
 import os
 import sys
