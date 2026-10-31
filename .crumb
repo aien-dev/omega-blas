@@ -1,18 +1,35 @@
 {
+  "created_at": "2026-10-27T01:35:00Z",
+  "creator": "AIEN (lane OmegaBlas, Stack7 plan)",
+  "extensions": {
+    "generated": {
+      "children": [],
+      "children_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compiled_at": "2026-10-28T21:30:36Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:af2c5413541c548663348f35fcdf3facbd3b1b1a6a42efa7c1afbf82a22ff4d4",
+      "evidence_files": 2,
+      "evidence_root": "sha256:0533ae0b4d9cc479f2e40336d25ae18fb09e391deed705188e4d5828feb2c8aa",
+      "files": 15,
+      "generated_at_commit": "0706265a751b0f0957df918a8a945e35735ce5c4",
+      "source_tree": "sha256:b20448e68f9bbb5b7752d2048119fcd26d947b1bb1b7df6b4842d05be411597b"
+    }
+  },
+  "lineage": {
+    "generation": 1,
+    "parent": "aien-dev/omega-mv@e5b32567a7aff3ce594e3254a622a846a6cd190b",
+    "siblings": [
+      "aien-dev/omega-bridge (binding, ABI v2)",
+      "aien-dev/CUDApp (GPU execution)"
+    ]
+  },
   "path": "aien-dev/omega-blas",
   "purpose": "Omega replacement for NVIDIA stack layer #6 (cuBLAS): sgemm/hgemm/bf16/fp8 gemm with f32 accumulation, gemv, batched and strided-batched gemm, fused bias/activation/scale epilogues. Compute in om/blas.om; CBLAS C ABI and DLPack Python binding; GPU through CUDApp.",
-  "creator": "AIEN (lane OmegaBlas, Stack7 plan)",
-  "created_at": "2026-10-27T01:35:00Z",
-  "lineage": {
-    "parent": "aien-dev/omega-mv@e5b32567a7aff3ce594e3254a622a846a6cd190b",
-    "siblings": ["aien-dev/omega-bridge (binding, ABI v2)", "aien-dev/CUDApp (GPU execution)"],
-    "generation": 1
-  },
   "whispers": [
     {
       "agent": "OmegaBlas",
-      "timestamp": "2026-10-27T01:35:00Z",
-      "message": "OM-2 has 16 registers per function and no spilling: keep for-loop counts to a name or one get (count temps stay pinned for the whole loop), pass kernel state through a small edit array, one column per helper call."
+      "message": "OM-2 has 16 registers per function and no spilling: keep for-loop counts to a name or one get (count temps stay pinned for the whole loop), pass kernel state through a small edit array, one column per helper call.",
+      "timestamp": "2026-10-27T01:35:00Z"
     }
   ]
 }
