@@ -46,9 +46,10 @@ one lock (the bound Omega runtime has one stack).
 ## GB10 device path
 
 Status: EXERCISED on the GB10 chip (netlib SGEMV/SGEMM, 2026-10-27,
-[receipts/netlib-gb10-20261027.md](receipts/netlib-gb10-20261027.md)). Not QUALIFIED. It depends on
-CUDApp `omega_gpu_gemm_ex` (aien-dev/CUDApp#139, EXPERIMENTAL, pinned in [PINS](PINS)), which is
-not merged yet.
+[receipts/netlib-gb10-20261027.md](receipts/netlib-gb10-20261027.md); rerun 2026-10-31 against
+CUDApp#214, [receipts/netlib-gb10-20261031.md](receipts/netlib-gb10-20261031.md)). Not QUALIFIED.
+It depends on CUDApp `omega_gpu_gemm_ex` (aien-dev/CUDApp#214, which replaces #139; EXPERIMENTAL,
+pinned in [PINS](PINS)), which is not merged yet.
 
 ```sh
 make GB10=1 CUDAPP=/path/to/CUDApp BRIDGE=... OMC=... OMC2=...   # builds into build-gb10/
