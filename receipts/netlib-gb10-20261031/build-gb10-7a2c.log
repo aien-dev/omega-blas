@@ -1,0 +1,8 @@
+make -C /tmp/cb/CUDApp OUT_DIR=build/omegablas-pic CC="cc -fPIC" build/omegablas-pic/libomega_gpu.a
+make[1]: Entering directory '/tmp/cb/CUDApp'
+make[1]: 'build/omegablas-pic/libomega_gpu.a' is up to date.
+make[1]: Leaving directory '/tmp/cb/CUDApp'
+mkdir -p build-gb10
+cc -std=gnu11 -O2 -Wall -Wextra -Werror -fPIC -shared -Wl,-soname,libomegablas.so \
+  -Iinclude -Ibuild/native -include build/native/omega_native.h -DOMB_GB10 -I/tmp/cb/CUDApp/src -DOMB_CUDAPP_REV='"7a2c384fa41566d9444d0da3186456ad049075fa"' -o build-gb10/libomegablas.so src/omegablas.c \
+  build/native/omega_native.c /tmp/cb/CUDApp/build/omegablas-pic/libomega_gpu.a -lm -lpthread
