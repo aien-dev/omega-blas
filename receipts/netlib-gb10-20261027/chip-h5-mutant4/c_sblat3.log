@@ -1,0 +1,40 @@
+omega-blas test hooks: gemm_ex mutant 4 planted
+ cblas_sgemm   PASSED THE TESTS OF ERROR-EXITS
+ TESTS OF THE REAL             LEVEL 3 BLAS
+
+ THE FOLLOWING PARAMETER VALUES WILL BE USED:
+   FOR N                   0     1     2     3     5     9
+   FOR ALPHA             0.0   1.0   0.7
+   FOR BETA              0.0   1.0   1.3
+
+ ROUTINES PASS COMPUTATIONAL TESTS IF TEST RATIO IS LESS THAN   16.00
+
+ COLUMN-MAJOR AND ROW-MAJOR DATA LAYOUTS ARE TESTED
+
+ RELATIVE MACHINE PRECISION IS TAKEN TO BE  1.2E-07
+
+
+ ******* FATAL ERROR - COMPUTED RESULT IS LESS THAN HALF ACCURATE *******
+           EXPECTED RESULT   COMPUTED RESULT
+       1     -0.185714           0.00000    
+ ******* cblas_sgemm   FAILED ON CALL NUMBER:
+   3405: cblas_sgemm  ( CblasColMajor,  CblasNoTrans,  CblasNoTrans,
+                      1,  1,  0, 0.0, A,  2, B,  1, 1.3, C,  2).
+ ******* cblas_sgemm   FAILED ON CALL NUMBER:
+   3403: cblas_sgemm  ( CblasRowMajor,  CblasNoTrans,  CblasNoTrans,
+                      1,  1,  0, 0.0, A,  2, B,  1, 0.0, C,  2).
+
+ cblas_ssymm   WAS NOT TESTED
+
+ cblas_strmm   WAS NOT TESTED
+
+ cblas_strsm   WAS NOT TESTED
+
+ cblas_ssyrk   WAS NOT TESTED
+
+ cblas_ssyr2k  WAS NOT TESTED
+
+ cblas_sgemmtr WAS NOT TESTED
+
+ END OF TESTS
+omega-blas routes: device gb10 host 0 gb10 3 gb10_core_calls 0 gb10_host_fixed 0 cudapp b28372d1f9ebb4edf5f347eb6ce2e8d7ca21e2c5

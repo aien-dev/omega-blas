@@ -1,0 +1,7 @@
+h2-gate exit 0
+h3-thresh0 exit 0
+h4-mutant1 exit 1
+h5-mutant2 exit 1
+h5-mutant4 exit 1
+h7-batched exit 0
+h8-batched-mutant2 exit 1

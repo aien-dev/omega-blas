@@ -1,0 +1,46 @@
+gb10 batched: library $WORK/blas/build-gb10/libomegablas.so, device gb10
+omega-blas test hooks: backend model (bw_hmma_model {16,2,RZ,nominal 2})
+omega-blas test hooks: gemm_ex mutant 4 planted
+FAIL strided col ta=0 tb=0 M=1 N=1 K=1 count=3: C(0,0) batch 0 = 0.0129173175, ref -0.028710030018167743, ratio 6.4e+06
+FAIL strided col ta=0 tb=0 M=3 N=5 K=2 count=3: C(0,0) batch 0 = -0.238686115, ref -0.19071427905246097, ratio 1.4e+06
+FAIL strided col ta=0 tb=0 M=9 N=7 K=9 count=3: C(0,0) batch 0 = 0.860757589, ref 0.21567978458669401, ratio 1.5e+06
+FAIL strided col ta=0 tb=0 M=16 N=13 K=16 count=3: C(0,0) batch 0 = 0.636805594, ref 1.1908151061489889, ratio 1.01e+06
+FAIL strided col ta=0 tb=0 M=4 N=6 K=0 count=3: C(0,0) batch 0 = 0, ref 0.69556814432144165, ratio 8.39e+06
+FAIL strided col ta=0 tb=1 M=1 N=1 K=1 count=3: C(0,0) batch 0 = 0.0296369102, ref 0.12544023119955128, ratio 6.41e+06
+FAIL strided col ta=0 tb=1 M=3 N=5 K=2 count=3: C(0,0) batch 0 = 0.284591168, ref 0.95288438762680272, ratio 3.98e+06
+FAIL strided col ta=0 tb=1 M=9 N=7 K=9 count=3: C(0,0) batch 0 = 0.585618377, ref 0.80767754579911255, ratio 7.85e+05
+FAIL strided col ta=0 tb=1 M=16 N=13 K=16 count=3: C(0,0) batch 0 = 0.857108891, ref 0.14519741068147596, ratio 9.13e+05
+FAIL strided col ta=0 tb=1 M=4 N=6 K=0 count=3: C(0,0) batch 0 = 0, ref 0.58278518915176392, ratio 8.39e+06
+FAIL strided col ta=1 tb=0 M=1 N=1 K=1 count=3: C(0,0) batch 0 = 0.25454697, ref -0.36111349145945582, ratio 5.93e+06
+FAIL strided col ta=1 tb=0 M=3 N=5 K=2 count=3: C(0,0) batch 0 = 0.819656253, ref 0.99799613141939147, ratio 1.5e+06
+FAIL strided col ta=1 tb=0 M=9 N=7 K=9 count=3: C(0,0) batch 0 = 0.32859683, ref -0.024241301775365542, ratio 8.71e+05
+FAIL strided col ta=1 tb=0 M=16 N=13 K=16 count=3: C(0,0) batch 0 = -2.47968674, ref -3.2289237830138511, ratio 1.46e+06
+FAIL strided col ta=1 tb=0 M=4 N=6 K=0 count=3: C(0,0) batch 0 = 0, ref 0.64055523276329041, ratio 8.39e+06
+FAIL strided col ta=1 tb=1 M=1 N=1 K=1 count=3: C(0,0) batch 0 = 0.503659785, ref -0.19602438504154662, ratio 4.88e+06
+FAIL strided col ta=1 tb=1 M=3 N=5 K=2 count=3: C(0,0) batch 0 = 0.27843523, ref -0.32390684457364216, ratio 3.42e+06
+FAIL strided col ta=1 tb=1 M=9 N=7 K=9 count=3: C(0,0) batch 0 = -1.45899761, ref -1.6529967732551256, ratio 5.53e+05
+FAIL strided col ta=1 tb=1 M=16 N=13 K=16 count=3: C(0,0) batch 0 = 0.138474926, ref 0.24578868715249413, ratio 1.57e+05
+FAIL strided col ta=1 tb=1 M=4 N=6 K=0 count=3: C(0,0) batch 0 = 0, ref -0.26151913404464722, ratio 8.39e+06
+FAIL strided row ta=0 tb=0 M=1 N=1 K=1 count=3: C(0,0) batch 0 = 0.169318557, ref -0.48811687982711049, ratio 6.67e+06
+FAIL strided row ta=0 tb=0 M=3 N=5 K=2 count=3: C(0,0) batch 0 = 0.450163424, ref 1.0890689277337913, ratio 4.92e+06
+FAIL strided row ta=0 tb=0 M=9 N=7 K=9 count=3: C(0,0) batch 0 = 2.3512454, ref 2.8780554104565326, ratio 1.42e+06
+FAIL strided row ta=0 tb=0 M=16 N=13 K=16 count=3: C(0,0) batch 0 = 3.58371377, ref 4.0159703356575669, ratio 6.87e+05
+FAIL strided row ta=0 tb=0 M=4 N=6 K=0 count=3: C(0,0) batch 0 = 0, ref 0.52804791927337646, ratio 8.39e+06
+FAIL strided row ta=0 tb=1 M=1 N=1 K=1 count=3: C(0,0) batch 0 = 0.490949035, ref 0.83877310299131125, ratio 3.48e+06
+FAIL strided row ta=0 tb=1 M=3 N=5 K=2 count=3: C(0,0) batch 0 = 0.321353316, ref -0.25203054228320809, ratio 5.38e+06
+FAIL strided row ta=0 tb=1 M=9 N=7 K=9 count=3: C(0,0) batch 0 = 0.284130692, ref 0.15735118677389082, ratio 4.74e+05
+FAIL strided row ta=0 tb=1 M=16 N=13 K=16 count=3: C(0,0) batch 0 = -2.5281775, ref -2.9365764295781354, ratio 5.72e+05
+FAIL strided row ta=0 tb=1 M=4 N=6 K=0 count=3: C(0,0) batch 0 = 0, ref -0.62814062833786011, ratio 8.39e+06
+FAIL strided row ta=1 tb=0 M=1 N=1 K=1 count=3: C(0,0) batch 0 = -0.0862167403, ref 0.59775620529468654, ratio 7.45e+06
+FAIL strided row ta=1 tb=0 M=3 N=5 K=2 count=3: C(0,0) batch 0 = -0.685923457, ref -0.9117978744611861, ratio 1.51e+06
+FAIL strided row ta=1 tb=0 M=9 N=7 K=9 count=3: C(0,0) batch 0 = 0.0783414319, ref 0.36694944576502664, ratio 7.88e+05
+FAIL strided row ta=1 tb=0 M=16 N=13 K=16 count=3: C(0,0) batch 0 = 1.49277377, ref 0.9985696448318393, ratio 6.93e+05
+FAIL strided row ta=1 tb=0 M=4 N=6 K=0 count=3: C(0,0) batch 0 = 0, ref 0.024545878171920776, ratio 8.39e+06
+FAIL strided row ta=1 tb=1 M=1 N=1 K=1 count=3: C(0,0) batch 0 = -0.00665546674, ref 0.015354292718381402, ratio 6.44e+06
+FAIL strided row ta=1 tb=1 M=3 N=5 K=2 count=3: C(0,0) batch 0 = 0.0595714822, ref -0.33887325885280006, ratio 2.75e+06
+FAIL strided row ta=1 tb=1 M=9 N=7 K=9 count=3: C(0,0) batch 0 = -0.128811091, ref 0.30450710904147371, ratio 1.55e+06
+FAIL strided row ta=1 tb=1 M=16 N=13 K=16 count=3: C(0,0) batch 0 = -0.590985656, ref -0.7993367998746308, ratio 4.47e+05
+FAIL strided row ta=1 tb=1 M=4 N=6 K=0 count=3: C(0,0) batch 0 = 0, ref 0.45984578132629395, ratio 8.39e+06
+FAIL pointer col ta=1 tb=0 M=9 N=7 K=9 count=3: C(0,0) batch 0 = 0.00171246007, ref -0.5793094512101149, ratio 1.81e+06
+FAIL pointer row ta=0 tb=1 M=5 N=3 K=16 count=3: C(0,0) batch 0 = 1.56488967, ref 1.7685756615550901, ratio 3.39e+05
+batched: device gb10, 46 cases, 42 failed, largest ratio device route 8388608.000 (limit 5.70) host route 0.832 (limit 9.51), routes host 2 gb10 52 gb10_core_calls 108

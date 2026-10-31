@@ -1,0 +1,2 @@
+fetchtest/lapack-3.12.1.tar.gz: OK
+LAPACK=$WORK/fetchtest/lapack-3.12.1

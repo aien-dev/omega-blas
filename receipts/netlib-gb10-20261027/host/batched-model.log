@@ -1,0 +1,3 @@
+gb10 batched: library $WORK/blas/build-gb10/libomegablas.so, device gb10
+omega-blas test hooks: backend model (bw_hmma_model {16,2,RZ,nominal 2})
+batched: device gb10, 46 cases, 0 failed, largest ratio device route 1.116 (limit 5.70) host route 0.832 (limit 9.51), routes host 2 gb10 52 gb10_core_calls 108

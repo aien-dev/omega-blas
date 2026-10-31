@@ -1,0 +1,2 @@
+omega-blas test hooks: gemm_ex mutant 2 planted
+omega-blas routes: device gb10 host 0 gb10 153 gb10_core_calls 73 gb10_host_fixed 0 cudapp b28372d1f9ebb4edf5f347eb6ce2e8d7ca21e2c5

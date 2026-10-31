@@ -1,0 +1,53 @@
+netlib: library /tmp/cb/omega-blas/build-gb10/libomegablas.so, device gb10, THRESH 0.0 (measurement)
+/home/drakestapleton/work/BlasGpu/lapack/lapack-3.12.1/CBLAS/testing/c_sblat3.f:1801:32:
+
+ 1801 |       COMMON             /INFOC/INFOT, NOUTC, OK
+      |                                1
+Warning: Named COMMON block ‘infoc’ at (1) shall be of the same size as elsewhere (12 vs 16 bytes)
+/home/drakestapleton/work/BlasGpu/lapack/lapack-3.12.1/CBLAS/testing/c_sblat3.f:1484:32:
+
+ 1484 |       COMMON             /INFOC/INFOT, NOUTC, OK
+      |                                1
+Warning: Named COMMON block ‘infoc’ at (1) shall be of the same size as elsewhere (12 vs 16 bytes)
+/home/drakestapleton/work/BlasGpu/lapack/lapack-3.12.1/CBLAS/testing/c_sblat3.f:1124:32:
+
+ 1124 |       COMMON             /INFOC/INFOT, NOUTC, OK
+      |                                1
+Warning: Named COMMON block ‘infoc’ at (1) shall be of the same size as elsewhere (12 vs 16 bytes)
+/home/drakestapleton/work/BlasGpu/lapack/lapack-3.12.1/CBLAS/testing/c_sblat3.f:813:32:
+
+  813 |       COMMON             /INFOC/INFOT, NOUTC, OK
+      |                                1
+Warning: Named COMMON block ‘infoc’ at (1) shall be of the same size as elsewhere (12 vs 16 bytes)
+/home/drakestapleton/work/BlasGpu/lapack/lapack-3.12.1/CBLAS/testing/c_sblat3.f:485:32:
+
+  485 |       COMMON             /INFOC/INFOT, NOUTC, OK
+      |                                1
+Warning: Named COMMON block ‘infoc’ at (1) shall be of the same size as elsewhere (12 vs 16 bytes)
+/home/drakestapleton/work/BlasGpu/lapack/lapack-3.12.1/CBLAS/testing/c_sblat3.f:91:32:
+
+   91 |       COMMON             /INFOC/INFOT, NOUTC, OK
+      |                                1
+Warning: Named COMMON block ‘infoc’ at (1) shall be of the same size as elsewhere (12 vs 16 bytes)
+sblat2: wall 13.222322847 s
+sblat2: omega-blas routes: device gb10 host 0 gb10 3072 gb10_core_calls 2304 gb10_host_fixed 0 cudapp f95dca375cfff93d69f3ca0fb89c66da43c54036
+sblat2:  SGEMV  PASSED THE TESTS OF ERROR-EXITS
+sblat2:  ******* BUT WITH MAXIMUM TEST RATIO    1.61 - SUSPECT *******
+sblat2: measured (THRESH 0.0)
+sblat3: wall 36.045131733 s
+sblat3: omega-blas routes: device gb10 host 0 gb10 10350 gb10_core_calls 6750 gb10_host_fixed 0 cudapp f95dca375cfff93d69f3ca0fb89c66da43c54036
+sblat3:  SGEMM   PASSED THE TESTS OF ERROR-EXITS
+sblat3:  ******* BUT WITH MAXIMUM TEST RATIO    1.87 - SUSPECT *******
+sblat3: measured (THRESH 0.0)
+c_sblat2: wall 24.571845942 s
+c_sblat2: omega-blas routes: device gb10 host 0 gb10 6144 gb10_core_calls 4608 gb10_host_fixed 0 cudapp f95dca375cfff93d69f3ca0fb89c66da43c54036
+c_sblat2:  cblas_sgemv  PASSED THE TESTS OF ERROR-EXITS
+c_sblat2:  ******* BUT WITH MAXIMUM TEST RATIO     1.61 - SUSPECT *******
+c_sblat2:  ******* BUT WITH MAXIMUM TEST RATIO     1.61 - SUSPECT *******
+c_sblat2: measured (THRESH 0.0)
+c_sblat3: wall 77.289396009 s
+c_sblat3: omega-blas routes: device gb10 host 0 gb10 20700 gb10_core_calls 13500 gb10_host_fixed 0 cudapp f95dca375cfff93d69f3ca0fb89c66da43c54036
+c_sblat3:  cblas_sgemm   PASSED THE TESTS OF ERROR-EXITS
+c_sblat3:  ******* BUT WITH MAXIMUM TEST RATIO     1.87 - SUSPECT *******
+c_sblat3:  ******* BUT WITH MAXIMUM TEST RATIO     1.87 - SUSPECT *******
+c_sblat3: measured (THRESH 0.0)

@@ -1,0 +1,4 @@
+gb10 batched: library $WORK/blas-mut/build-gb10/libomegablas.so, device gb10
+omega-blas test hooks: backend model (bw_hmma_model {16,2,RZ,nominal 2})
+omega-blas: omega_gpu_gemm_ex BAD_ARGS (-1) on m 9 n 7 k 9 batch 3: -
+Aborted (core dumped)

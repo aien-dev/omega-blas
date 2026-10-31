@@ -17,6 +17,10 @@
 #include <string.h>
 
 #include "omega_api.h"
+#ifdef OMB_GB10
+#include "omega_gpu_gemm_ex.h"
+#include "omega_gpu_session.h"
+#endif
 
 /* The CBLAS reference test drivers read and write these two globals (c_xerbla.c). */
 int RowMajorStrg = 0;
@@ -140,6 +144,163 @@ static int64_t chk_gemm(char ta, char tb, int64_t m, int64_t n, int64_t k, int64
     return (int64_t)gemm_info(&c);
 }
 
+/* ---- device routing (README.md, "GB10 device path") ----
+ * MIGRATION-PENDING C, build switch OMB_GB10 (make GB10=1; the default build has no device code).
+ * The dispatch to CUDApp omega_gpu_gemm_ex stays C because an Omega unit cannot call a C entry
+ * point; its named successor is a unit-to-unit Omega call into CUDApp's src/omega_gpu_gemm_ex.om
+ * (docs/EXTENSIONS.md). Argument checks and the gemv gather/scatter stay in the Omega unit. */
+
+static int omb_dev = -1; /* -1: OMEGABLAS_DEVICE not read yet */
+static omb_route_counts omb_counts;
+
+static void omb_die(const char *what, const char *detail)
+{
+    fprintf(stderr, "omega-blas: %s%s\n", what, detail ? detail : "");
+    abort();
+}
+
+/* lock held */
+static int dev_gb10(void)
+{
+    if (omb_dev < 0) {
+        const char *e = getenv("OMEGABLAS_DEVICE");
+        if (!e || !*e || !strcmp(e, "host")) omb_dev = OMB_DEVICE_HOST;
+#ifdef OMB_GB10
+        else if (!strcmp(e, "gb10")) omb_dev = OMB_DEVICE_GB10;
+#else
+        else if (!strcmp(e, "gb10")) omb_die("OMEGABLAS_DEVICE=gb10, but this library was built without the GB10 path (make GB10=1)", NULL);
+#endif
+        else omb_die("OMEGABLAS_DEVICE must be host or gb10, not ", e);
+    }
+    return omb_dev == OMB_DEVICE_GB10;
+}
+
+#ifdef OMB_GB10
+/* count column-major products C_b (m x n, ldc) = alpha op(A_b) op(B_b) + beta C_b at element strides
+ * sa, sb, sc (all >= 0, C batches disjoint), as gemm_ex's row-major C^T = op(B)^T op(A)^T: column-major
+ * storage of B, A and C is row-major storage of their transposes, so A' = B (op tb, lda' = ldb),
+ * B' = A (op ta, ldb' = lda), M' = n, N' = m. k = 0 runs as alpha 0, k 1 (C = beta C, A and B unread).
+ * Arguments already checked, m, n, count >= 1. Any error aborts. lock held */
+static void gb10_gemm(int ta, int tb, int64_t m, int64_t n, int64_t k, float alpha, const float *A,
+                      int64_t lda, const float *B, int64_t ldb, float beta, float *C, int64_t ldc,
+                      int64_t count, int64_t sa, int64_t sb, int64_t sc)
+{
+    int nok = alpha == 0.0f || k == 0;
+    OmegaGemmExInfo inf;
+    OmegaGemmExArgs x;
+    memset(&x, 0, sizeof x);
+    memset(&inf, 0, sizeof inf);
+    x.op_a = tb ? OMEGA_GEMM_OP_T : OMEGA_GEMM_OP_N;
+    x.op_b = ta ? OMEGA_GEMM_OP_T : OMEGA_GEMM_OP_N;
+    x.m = (uint64_t)n;
+    x.n = (uint64_t)m;
+    x.k = nok ? 1u : (uint64_t)k;
+    x.batch = (uint64_t)count;
+    x.a_type = x.b_type = x.c_type = OMEGA_GEMM_DT_F32;
+    x.a = nok ? NULL : B;
+    x.lda = (uint64_t)ldb;
+    x.stride_a = (uint64_t)sb;
+    x.b = nok ? NULL : A;
+    x.ldb = (uint64_t)lda;
+    x.stride_b = (uint64_t)sa;
+    x.c = C;
+    x.ldc = (uint64_t)ldc;
+    x.stride_c = (uint64_t)sc;
+    x.alpha = nok ? 0.0f : alpha;
+    x.beta = beta;
+    x.compute = OMEGA_GEMM_EX_DEFAULT;
+    x.scale = OMEGA_GEMM_SCALE_NONE;
+    x.info = &inf;
+    int rc = omega_gpu_gemm_ex(&x);
+    if (rc != OMEGA_GPU_GEMM_OK) {
+        const char *why = omega_gpu_session_last_error();
+        fprintf(stderr, "omega-blas: omega_gpu_gemm_ex %s (%d) on m %lld n %lld k %lld batch %lld: %s\n",
+                omega_gpu_gemm_rc_name(rc), rc, (long long)m, (long long)n, (long long)k,
+                (long long)count, why && *why ? why : "-");
+        abort();
+    }
+    omb_counts.gb10++;
+    omb_counts.gb10_core_calls += inf.core_calls;
+    omb_counts.gb10_host_fixed += inf.host_fixed;
+}
+#endif
+
+static size_t esize(omb_type t) { return t == OMB_F32 ? 4 : is16(t) ? 2 : 1; }
+static const void *at_elem(const void *p, int64_t i, omb_type t) { return (const char *)p + (ptrdiff_t)i * (ptrdiff_t)esize(t); }
+
+/* count checked column-major products at element strides sa, sb, sc: on the GB10 for f32 without an
+ * epilogue when that device is selected, else in the host core. lock held */
+static void run_gemm(int ta, int tb, int64_t m, int64_t n, int64_t k, float alpha, const void *A,
+                     omb_type at, int64_t lda, const void *B, omb_type bt, int64_t ldb, float beta,
+                     void *C, omb_type ct, int64_t ldc, const float *bias, omb_bias bmode,
+                     omb_act act, int64_t count, int64_t sa, int64_t sb, int64_t sc)
+{
+    int epi = act != OMB_ACT_NONE || (bias && bmode != OMB_BIAS_NONE);
+    if (m == 0 || n == 0 || count == 0 || ((alpha == 0.0f || k == 0) && beta == 1.0f && !epi)) return;
+    int gb10 = dev_gb10();
+#ifdef OMB_GB10
+    if (gb10 && at == OMB_F32 && bt == OMB_F32 && ct == OMB_F32 && !epi) {
+        if (sa >= 0 && sb >= 0 && (count == 1 || sc >= (int64_t)span(m, n, ldc)))
+            gb10_gemm(ta, tb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, count, sa, sb, sc);
+        else
+            for (int64_t b = 0; b < count; b++)
+                gb10_gemm(ta, tb, m, n, k, alpha, at_elem(A, b * sa, at), lda, at_elem(B, b * sb, bt),
+                          ldb, beta, (void *)at_elem(C, b * sc, ct), ldc, 1, 0, 0, 0);
+        return;
+    }
+#else
+    (void)gb10;
+#endif
+    for (int64_t b = 0; b < count; b++) {
+        core_gemm(ta, tb, m, n, k, alpha, at_elem(A, b * sa, at), at, lda, at_elem(B, b * sb, bt), bt,
+                  ldb, beta, (void *)at_elem(C, b * sc, ct), ct, ldc, bias, bmode, act);
+        omb_counts.host++;
+    }
+}
+
+int omb_set_device(omb_device d)
+{
+#ifdef OMB_GB10
+    if (d != OMB_DEVICE_HOST && d != OMB_DEVICE_GB10) return -1;
+#else
+    if (d != OMB_DEVICE_HOST) return -1;
+#endif
+    pthread_mutex_lock(&omb_lock);
+    omb_dev = (int)d;
+    pthread_mutex_unlock(&omb_lock);
+    return 0;
+}
+
+omb_device omb_get_device(void)
+{
+    pthread_mutex_lock(&omb_lock);
+    omb_device d = dev_gb10() ? OMB_DEVICE_GB10 : OMB_DEVICE_HOST;
+    pthread_mutex_unlock(&omb_lock);
+    return d;
+}
+
+void omb_get_route_counts(omb_route_counts *out)
+{
+    pthread_mutex_lock(&omb_lock);
+    *out = omb_counts;
+    pthread_mutex_unlock(&omb_lock);
+}
+
+#ifndef OMB_CUDAPP_REV
+#define OMB_CUDAPP_REV "none"
+#endif
+/* OMEGABLAS_ROUTE_REPORT=1: one line on stderr at unload, the receipt that calls reached the device. */
+__attribute__((destructor)) static void omb_route_report(void)
+{
+    const char *e = getenv("OMEGABLAS_ROUTE_REPORT");
+    if (!e || strcmp(e, "1")) return;
+    fprintf(stderr, "omega-blas routes: device %s host %llu gb10 %llu gb10_core_calls %llu gb10_host_fixed %llu cudapp %s\n",
+            omb_dev == OMB_DEVICE_GB10 ? "gb10" : omb_dev == OMB_DEVICE_HOST ? "host" : "unread",
+            (unsigned long long)omb_counts.host, (unsigned long long)omb_counts.gb10,
+            (unsigned long long)omb_counts.gb10_core_calls,
+            (unsigned long long)omb_counts.gb10_host_fixed, OMB_CUDAPP_REV);
+}
+
 static int trn(char c) { return !(c == 'N' || c == 'n'); }
 
 /* ---- Fortran 77 ---- */
@@ -183,8 +344,8 @@ void sgemm_(const char *transa, const char *transb, const int *m, const int *n, 
         xerbla_("SGEMM ", &i, 6);
         return;
     }
-    core_gemm(trn(*transa), trn(*transb), *m, *n, *k, *alpha, a, OMB_F32, *lda, b, OMB_F32, *ldb,
-              *beta, c, OMB_F32, *ldc, NULL, OMB_BIAS_NONE, OMB_ACT_NONE);
+    run_gemm(trn(*transa), trn(*transb), *m, *n, *k, *alpha, a, OMB_F32, *lda, b, OMB_F32, *ldb,
+             *beta, c, OMB_F32, *ldc, NULL, OMB_BIAS_NONE, OMB_ACT_NONE, 1, 0, 0, 0);
     pthread_mutex_unlock(&omb_lock);
 }
 
@@ -220,9 +381,19 @@ void sgemv_(const char *trans, const int *m, const int *n, const float *alpha, c
     copy32(&gx, (const uint32_t *)x, xl, w, wl);
     cp gy = { .n = (uint64_t)ly, .os = vstart(ly, iy), .is = iy, .od = (uint64_t)lx, .id = 1 };
     copy32(&gy, (const uint32_t *)y, yl, w, wl);
-    gv g = { .m = (uint64_t)M, .n = (uint64_t)N, .lda = (uint64_t)*lda, .offa = 0, .ta = (uint64_t)t,
-             .alpha = f2u(*alpha), .beta = f2u(*beta), .wx = 0, .wy = (uint64_t)lx };
-    gemv_k(&g, (const uint32_t *)a, span(M, N, *lda), w, wl);
+    if (dev_gb10()) {
+#ifdef OMB_GB10
+        /* y (ly) = alpha op(A) x + beta y as the column-major product with x a k = lx by 1 B and
+         * y a ly by 1 C, both in the workspace */
+        gb10_gemm(t, 0, ly, 1, lx, *alpha, a, *lda, (const float *)w, lx, *beta, (float *)(w + lx),
+                  ly, 1, 0, 0, 0);
+#endif
+    } else {
+        gv g = { .m = (uint64_t)M, .n = (uint64_t)N, .lda = (uint64_t)*lda, .offa = 0, .ta = (uint64_t)t,
+                 .alpha = f2u(*alpha), .beta = f2u(*beta), .wx = 0, .wy = (uint64_t)lx };
+        gemv_k(&g, (const uint32_t *)a, span(M, N, *lda), w, wl);
+        omb_counts.host++;
+    }
     cp sy = { .n = (uint64_t)ly, .os = (uint64_t)lx, .is = 1, .od = vstart(ly, iy), .id = iy };
     copy32(&sy, w, wl, (uint32_t *)y, yl);
     free(w);
@@ -281,10 +452,13 @@ void cblas_sgemv(CBLAS_LAYOUT layout, enum CBLAS_TRANSPOSE TransA, int M, int N,
 
 /* ---- extensions ---- */
 
-int omb_gemm_ex(CBLAS_LAYOUT layout, enum CBLAS_TRANSPOSE TransA, enum CBLAS_TRANSPOSE TransB,
-                int M, int N, int K, float alpha, const void *A, omb_type atype, int lda,
-                const void *B, omb_type btype, int ldb, float beta, void *C, omb_type ctype,
-                int ldc, const float *bias, omb_bias bias_mode, omb_act act)
+/* omb_gemm_ex over count problems at element strides sA, sB, sC (count >= 1; batches share every
+ * argument but the pointers, so one check covers all). */
+static int gemm_exb(CBLAS_LAYOUT layout, enum CBLAS_TRANSPOSE TransA, enum CBLAS_TRANSPOSE TransB,
+                    int M, int N, int K, float alpha, const void *A, omb_type atype, int lda,
+                    const void *B, omb_type btype, int ldb, float beta, void *C, omb_type ctype,
+                    int ldc, const float *bias, omb_bias bias_mode, omb_act act, int64_t count,
+                    int64_t sA, int64_t sB, int64_t sC)
 {
     char ta = tchar(TransA), tb = tchar(TransB);
     if (layout != CblasColMajor && layout != CblasRowMajor) return 1;
@@ -300,8 +474,8 @@ int omb_gemm_ex(CBLAS_LAYOUT layout, enum CBLAS_TRANSPOSE TransA, enum CBLAS_TRA
     if (layout == CblasColMajor) {
         info = chk_gemm(ta, tb, M, N, K, lda, ldb, ldc);
         if (!info)
-            core_gemm(trn(ta), trn(tb), M, N, K, alpha, A, atype, lda, B, btype, ldb, beta, C,
-                      ctype, ldc, bias, bias_mode, act);
+            run_gemm(trn(ta), trn(tb), M, N, K, alpha, A, atype, lda, B, btype, ldb, beta, C,
+                     ctype, ldc, bias, bias_mode, act, count, sA, sB, sC);
         else info += 1;
     } else {
         /* row major C (M x N) is column major C^T = op(B)^T op(A)^T (N x M): a row bias of C is
@@ -310,8 +484,8 @@ int omb_gemm_ex(CBLAS_LAYOUT layout, enum CBLAS_TRANSPOSE TransA, enum CBLAS_TRA
                     : bias_mode == OMB_BIAS_COL ? OMB_BIAS_ROW : OMB_BIAS_NONE;
         info = chk_gemm(tb, ta, N, M, K, ldb, lda, ldc);
         if (!info)
-            core_gemm(trn(tb), trn(ta), N, M, K, alpha, B, btype, ldb, A, atype, lda, beta, C,
-                      ctype, ldc, bias, bm, act);
+            run_gemm(trn(tb), trn(ta), N, M, K, alpha, B, btype, ldb, A, atype, lda, beta, C,
+                     ctype, ldc, bias, bm, act, count, sB, sA, sC);
         else {
             info += 1;
             if (info == 4) info = 5; else if (info == 5) info = 4;
@@ -320,6 +494,15 @@ int omb_gemm_ex(CBLAS_LAYOUT layout, enum CBLAS_TRANSPOSE TransA, enum CBLAS_TRA
     }
     pthread_mutex_unlock(&omb_lock);
     return (int)info;
+}
+
+int omb_gemm_ex(CBLAS_LAYOUT layout, enum CBLAS_TRANSPOSE TransA, enum CBLAS_TRANSPOSE TransB,
+                int M, int N, int K, float alpha, const void *A, omb_type atype, int lda,
+                const void *B, omb_type btype, int ldb, float beta, void *C, omb_type ctype,
+                int ldc, const float *bias, omb_bias bias_mode, omb_act act)
+{
+    return gemm_exb(layout, TransA, TransB, M, N, K, alpha, A, atype, lda, B, btype, ldb, beta, C,
+                    ctype, ldc, bias, bias_mode, act, 1, 0, 0, 0);
 }
 
 int omb_hgemm(CBLAS_LAYOUT layout, enum CBLAS_TRANSPOSE TransA, enum CBLAS_TRANSPOSE TransB,
@@ -337,8 +520,6 @@ int omb_bfgemm(CBLAS_LAYOUT layout, enum CBLAS_TRANSPOSE TransA, enum CBLAS_TRAN
     return omb_gemm_ex(layout, TransA, TransB, M, N, K, alpha, A, OMB_BF16, lda, B, OMB_BF16, ldb,
                        beta, C, OMB_BF16, ldc, NULL, OMB_BIAS_NONE, OMB_ACT_NONE);
 }
-
-static size_t esize(omb_type t) { return t == OMB_F32 ? 4 : is16(t) ? 2 : 1; }
 
 int omb_gemm_batched(CBLAS_LAYOUT layout, enum CBLAS_TRANSPOSE TransA,
                      enum CBLAS_TRANSPOSE TransB, int M, int N, int K, float alpha,
@@ -362,15 +543,9 @@ int omb_gemm_strided_batched(CBLAS_LAYOUT layout, enum CBLAS_TRANSPOSE TransA,
                              void *C, omb_type ctype, int ldc, int64_t strideC, int count)
 {
     if (count < 0) return 21;
-    for (int b = 0; b < count; b++) {
-        int r = omb_gemm_ex(layout, TransA, TransB, M, N, K, alpha,
-                            (const char *)A + (size_t)(b * strideA) * esize(atype), atype, lda,
-                            (const char *)B + (size_t)(b * strideB) * esize(btype), btype, ldb,
-                            beta, (char *)C + (size_t)(b * strideC) * esize(ctype), ctype, ldc,
-                            NULL, OMB_BIAS_NONE, OMB_ACT_NONE);
-        if (r) return r;
-    }
-    return 0;
+    if (count == 0) return 0;
+    return gemm_exb(layout, TransA, TransB, M, N, K, alpha, A, atype, lda, B, btype, ldb, beta, C,
+                    ctype, ldc, NULL, OMB_BIAS_NONE, OMB_ACT_NONE, count, strideA, strideB, strideC);
 }
 
 /* The seeded Omega loop bound is 1,000,000 iterations; convert in chunks below it. */

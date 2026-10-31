@@ -1,0 +1,2 @@
+gb10 batched: library $WORK/blas/build/libomegablas.so, device host
+batched: device host, 46 cases, 0 failed, largest ratio device route 0.000 (limit 5.70) host route 1.330 (limit 9.51), routes host 134 gb10 0 gb10_core_calls 0

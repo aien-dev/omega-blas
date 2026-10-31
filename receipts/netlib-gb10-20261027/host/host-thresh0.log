@@ -1,0 +1,45 @@
+netlib: library $WORK/blas/build/libomegablas.so, device host, THRESH 0.0 (measurement)
+../lapack/lapack-3.12.1/CBLAS/testing/c_sblat3.f:1801:32:
+
+ 1801 |       COMMON             /INFOC/INFOT, NOUTC, OK
+      |                                1
+Warning: Named COMMON block ‘infoc’ at (1) shall be of the same size as elsewhere (12 vs 16 bytes)
+../lapack/lapack-3.12.1/CBLAS/testing/c_sblat3.f:1484:32:
+
+ 1484 |       COMMON             /INFOC/INFOT, NOUTC, OK
+      |                                1
+Warning: Named COMMON block ‘infoc’ at (1) shall be of the same size as elsewhere (12 vs 16 bytes)
+../lapack/lapack-3.12.1/CBLAS/testing/c_sblat3.f:1124:32:
+
+ 1124 |       COMMON             /INFOC/INFOT, NOUTC, OK
+      |                                1
+Warning: Named COMMON block ‘infoc’ at (1) shall be of the same size as elsewhere (12 vs 16 bytes)
+../lapack/lapack-3.12.1/CBLAS/testing/c_sblat3.f:813:32:
+
+  813 |       COMMON             /INFOC/INFOT, NOUTC, OK
+      |                                1
+Warning: Named COMMON block ‘infoc’ at (1) shall be of the same size as elsewhere (12 vs 16 bytes)
+../lapack/lapack-3.12.1/CBLAS/testing/c_sblat3.f:485:32:
+
+  485 |       COMMON             /INFOC/INFOT, NOUTC, OK
+      |                                1
+Warning: Named COMMON block ‘infoc’ at (1) shall be of the same size as elsewhere (12 vs 16 bytes)
+../lapack/lapack-3.12.1/CBLAS/testing/c_sblat3.f:91:32:
+
+   91 |       COMMON             /INFOC/INFOT, NOUTC, OK
+      |                                1
+Warning: Named COMMON block ‘infoc’ at (1) shall be of the same size as elsewhere (12 vs 16 bytes)
+sblat2:  SGEMV  PASSED THE TESTS OF ERROR-EXITS
+sblat2:  ******* BUT WITH MAXIMUM TEST RATIO    1.48 - SUSPECT *******
+sblat2: measured (THRESH 0.0)
+sblat3:  SGEMM   PASSED THE TESTS OF ERROR-EXITS
+sblat3:  ******* BUT WITH MAXIMUM TEST RATIO    0.00 - SUSPECT *******
+sblat3: measured (THRESH 0.0)
+c_sblat2:  cblas_sgemv  PASSED THE TESTS OF ERROR-EXITS
+c_sblat2:  ******* BUT WITH MAXIMUM TEST RATIO     1.48 - SUSPECT *******
+c_sblat2:  ******* BUT WITH MAXIMUM TEST RATIO     1.51 - SUSPECT *******
+c_sblat2: measured (THRESH 0.0)
+c_sblat3:  cblas_sgemm   PASSED THE TESTS OF ERROR-EXITS
+c_sblat3:  ******* BUT WITH MAXIMUM TEST RATIO     0.00 - SUSPECT *******
+c_sblat3:  ******* BUT WITH MAXIMUM TEST RATIO     0.00 - SUSPECT *******
+c_sblat3: measured (THRESH 0.0)

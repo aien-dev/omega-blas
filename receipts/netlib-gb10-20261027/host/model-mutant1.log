@@ -1,0 +1,49 @@
+netlib: library $WORK/blas/build-gb10/libomegablas.so, device gb10
+../lapack/lapack-3.12.1/CBLAS/testing/c_sblat3.f:1801:32:
+
+ 1801 |       COMMON             /INFOC/INFOT, NOUTC, OK
+      |                                1
+Warning: Named COMMON block ‘infoc’ at (1) shall be of the same size as elsewhere (12 vs 16 bytes)
+../lapack/lapack-3.12.1/CBLAS/testing/c_sblat3.f:1484:32:
+
+ 1484 |       COMMON             /INFOC/INFOT, NOUTC, OK
+      |                                1
+Warning: Named COMMON block ‘infoc’ at (1) shall be of the same size as elsewhere (12 vs 16 bytes)
+../lapack/lapack-3.12.1/CBLAS/testing/c_sblat3.f:1124:32:
+
+ 1124 |       COMMON             /INFOC/INFOT, NOUTC, OK
+      |                                1
+Warning: Named COMMON block ‘infoc’ at (1) shall be of the same size as elsewhere (12 vs 16 bytes)
+../lapack/lapack-3.12.1/CBLAS/testing/c_sblat3.f:813:32:
+
+  813 |       COMMON             /INFOC/INFOT, NOUTC, OK
+      |                                1
+Warning: Named COMMON block ‘infoc’ at (1) shall be of the same size as elsewhere (12 vs 16 bytes)
+../lapack/lapack-3.12.1/CBLAS/testing/c_sblat3.f:485:32:
+
+  485 |       COMMON             /INFOC/INFOT, NOUTC, OK
+      |                                1
+Warning: Named COMMON block ‘infoc’ at (1) shall be of the same size as elsewhere (12 vs 16 bytes)
+../lapack/lapack-3.12.1/CBLAS/testing/c_sblat3.f:91:32:
+
+   91 |       COMMON             /INFOC/INFOT, NOUTC, OK
+      |                                1
+Warning: Named COMMON block ‘infoc’ at (1) shall be of the same size as elsewhere (12 vs 16 bytes)
+sblat2: omega-blas routes: device gb10 host 0 gb10 3 gb10_core_calls 0 gb10_host_fixed 0 cudapp b28372d1f9ebb4edf5f347eb6ce2e8d7ca21e2c5
+sblat2: FAIL
+16: ******* FATAL ERROR - COMPUTED RESULT IS LESS THAN HALF ACCURATE *******
+20: ******* SGEMV  FAILED ON CALL NUMBER:
+sblat3: omega-blas routes: device gb10 host 0 gb10 57 gb10_core_calls 0 gb10_host_fixed 0 cudapp b28372d1f9ebb4edf5f347eb6ce2e8d7ca21e2c5
+sblat3: FAIL
+14: ******* FATAL ERROR - COMPUTED RESULT IS LESS THAN HALF ACCURATE *******
+17: ******* SGEMM   FAILED ON CALL NUMBER:
+c_sblat2: omega-blas routes: device gb10 host 0 gb10 4 gb10_core_calls 0 gb10_host_fixed 0 cudapp b28372d1f9ebb4edf5f347eb6ce2e8d7ca21e2c5
+c_sblat2: FAIL
+20: ******* FATAL ERROR - COMPUTED RESULT IS LESS THAN HALF ACCURATE *******
+24: ******* cblas_sgemv  FAILED ON CALL NUMBER:
+26: ******* cblas_sgemv  FAILED ON CALL NUMBER:
+c_sblat3: omega-blas routes: device gb10 host 0 gb10 58 gb10_core_calls 0 gb10_host_fixed 0 cudapp b28372d1f9ebb4edf5f347eb6ce2e8d7ca21e2c5
+c_sblat3: FAIL
+18: ******* FATAL ERROR - COMPUTED RESULT IS LESS THAN HALF ACCURATE *******
+21: ******* cblas_sgemm   FAILED ON CALL NUMBER:
+24: ******* cblas_sgemm   FAILED ON CALL NUMBER:

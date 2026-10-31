@@ -1,0 +1,25 @@
+omega-blas: OMEGABLAS_DEVICE=gb10, but this library was built without the GB10 path (make GB10=1)
+
+Program received signal SIGABRT: Process abort signal.
+
+Backtrace for this error:
+#0  0xac0b39f6a013 in ???
+#1  0xac0b39f698d7 in ???
+#2  0xf20adf97aa5f in ???
+#3  0xf20adf6d74d8 in __pthread_kill_implementation
+	at ./nptl/pthread_kill.c:44
+#4  0xf20adf68cb3b in __GI_raise
+	at ../sysdeps/posix/raise.c:26
+#5  0xf20adf677dff in __GI_abort
+	at ./stdlib/abort.c:79
+#6  0xf20adf91242f in ???
+#7  0xf20adf912e7f in ???
+#8  0xac0b39f5d40b in ???
+#9  0xac0b39f68767 in ???
+#10  0xac0b39f68e7f in ???
+#11  0xf20adf6784c3 in __libc_start_call_main
+	at ../sysdeps/nptl/libc_start_call_main.h:58
+#12  0xf20adf678597 in __libc_start_main_impl
+	at ../csu/libc-start.c:360
+#13  0xac0b39f539af in ???
+#14  0xffffffffffffffff in ???

@@ -1,0 +1,25 @@
+omega-blas: OMEGABLAS_DEVICE must be host or gb10, not cuda
+
+Program received signal SIGABRT: Process abort signal.
+
+Backtrace for this error:
+#0  0xbffe8f6ba013 in ???
+#1  0xbffe8f6b98d7 in ???
+#2  0xfe7745560a5f in ???
+#3  0xfe77452c74d8 in __pthread_kill_implementation
+	at ./nptl/pthread_kill.c:44
+#4  0xfe774527cb3b in __GI_raise
+	at ../sysdeps/posix/raise.c:26
+#5  0xfe7745267dff in __GI_abort
+	at ./stdlib/abort.c:79
+#6  0xfe7745502463 in ???
+#7  0xfe7745502e7f in ???
+#8  0xbffe8f6ad40b in ???
+#9  0xbffe8f6b8767 in ???
+#10  0xbffe8f6b8e7f in ???
+#11  0xfe77452684c3 in __libc_start_call_main
+	at ../sysdeps/nptl/libc_start_call_main.h:58
+#12  0xfe7745268597 in __libc_start_main_impl
+	at ../csu/libc-start.c:360
+#13  0xbffe8f6a39af in ???
+#14  0xffffffffffffffff in ???

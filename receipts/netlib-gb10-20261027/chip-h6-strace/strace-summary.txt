@@ -1,0 +1,16 @@
+# strace -f -qq -e trace=openat,ioctl ./sblat2 (OMEGABLAS_DEVICE=gb10); full trace 23147 lines, sha256 fdefc5073c91d92457e52cb48ccaf7cb8f8f8bbd3c2c536b04011fe2329d01f1
+## openat of /dev/nvidia*
+      2 openat(AT_FDCWD, "/dev/nvidia0"
+   2315 openat(AT_FDCWD, "/dev/nvidiactl"
+      2 openat(AT_FDCWD, "/dev/nvidia-uvm"
+## ioctl total
+18508
+## top ioctl requests
+   2324 ioctl(5, _IOC(_IOC_READ|_IOC_WRITE, 0x46, 0x2b, 0x20)
+   2315 ioctl(5, _IOC(_IOC_READ|_IOC_WRITE, 0x46, 0x4e, 0x38)
+   2314 ioctl(6, _IOC(_IOC_NONE, 0, 0x49, 0)
+   2314 ioctl(6, _IOC(_IOC_NONE, 0, 0x21, 0)
+   2314 ioctl(5, _IOC(_IOC_READ|_IOC_WRITE, 0x46, 0x57, 0x40)
+   2304 ioctl(6, _IOC(_IOC_NONE, 0, 0x22, 0)
+   2304 ioctl(5, _IOC(_IOC_READ|_IOC_WRITE, 0x46, 0x58, 0x30)
+   2304 ioctl(5, _IOC(_IOC_READ|_IOC_WRITE, 0x46, 0x29, 0x10)
